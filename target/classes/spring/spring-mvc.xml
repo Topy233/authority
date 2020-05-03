@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <context:component-scan base-package="com.ejeg"/>
+
+    <!--注解驱动-->
+    <mvc:annotation-driven/>
+
+    <!--使用静态文件-->
+    <mvc:default-servlet-handler/>
+
+    <!-- shiro提供了相应的注解实现权限控制，但是需要AOP功能的支持
+         定义AOP切面，用于代理如@RequiresRole注解的控制器，进行权限控制-->
+    <aop:config proxy-target-class="true"/>
+
+    <aop:aspectj-autoproxy proxy-target-class="true"></aop:aspectj-autoproxy>
+
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securityManager"/>
+    </bean>
+
+
+    <!--FreeMaker视图解析器-->
+    <!--先去ftl找，没找到再去pages找-->
+    <bean id="viewResolver" class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+        <!--优先级，通过“order”属性来声明优先级，order值越低，则优先级越高-->
+        <property name="order" value="0"/>
+        <property name="prefix" value=""/>
+        <property name="suffix" value=".ftl"/>
+        <property name="contentType" value="text/html; charset=UTF-8"/>
+        <property name="requestContextAttribute" value="request"/>
+    </bean>
+
+
+    <!-- freeMarker的相关配置 -->
+    <bean id="freemarkerConfig" class="com.ejeg.shiro.config.ShiroTagFreeMarkerConfigurer">
+        <property name="templateLoaderPath" value="/WEB-INF/"/>
+        <property name="freemarkerSettings">
+            <props>
+                <!--设置标签类型 两种：[] 和<> 。[]这种标记解析要快些-->
+                <prop key="tag_syntax">auto_detect</prop>
+                <!--检查模版跟新时间间隔，默认5s-->
+                <prop key="template_update_delay">1</prop>
+                <prop key="defaultEncoding">UTF-8</prop>
+                <prop key="url_escaping_charset">UTF-8</prop>
+                <prop key="locale">zh_CN</prop>
+                <!--格式化-->
+                <prop key="boolean_format">true,false</prop>
+                <prop key="datetime_format">yyyy-MM-dd HH:mm:ss</prop>
+                <prop key="date_format">yyyy-MM-dd</prop>
+                <prop key="time_format">HH:mm:ss</prop>
+                <prop key="number_format">0.######</prop>
+                <!--去掉多余的空格-->
+                <prop key="whitespace_stripping">true</prop>
+                <prop key="object_wrapper">freemarker.ext.beans.BeansWrapper</prop>
+                <!-- <prop key="auto_import">/WEB-INF/ftl/common.ftl as c</prop> -->
+            </props>
+        </property>
+        <!-- 自定义指令start -->
+        <property name="freemarkerVariables">
+            <map>
+                <entry key="xml_escape" value-ref="fmXmlEscape"/>
+            </map>
+        </property>
+        <!-- 自定义指令end -->
+    </bean>
+
+    <bean id="fmXmlEscape" class="freemarker.template.utility.XmlEscape"/>
+
+
+    <!-- 控制器异常处理，用来处理权限、角色验证失败出现的UnauthorizedException异常 -->
+    <bean id="exceptionHandlerExceptionResolver"
+          class="org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver">
+    </bean>
+
+
+    <!--通用视图解析器-->
+    <!--    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+            &lt;!&ndash;优先级，通过“order”属性来声明优先级，order值越低，则优先级越高&ndash;&gt;
+            <property name="order" value="1"/>
+            <property name="prefix" value="/WEB-INF/"/>
+            <property name="suffix" value=".jsp"/>
+        </bean>-->
+
+
+</beans>
